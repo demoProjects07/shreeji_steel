@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Product Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body { font-family: Arial; background: #f5f6fa; padding: 20px; }
+    h2 { text-align: center; }
+    .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; }
+    .product { background: white; padding: 10px; margin-top: 10px; border-radius: 10px; }
+  </style>
+</head>
+
+<body>
+
+<h2>📦 Product Manager</h2>
+
+<div class="card">
+  <video id="video" autoplay></video>
+  <button onclick="capture()">📸 Capture</button>
+  <img id="preview" width="100%">
+
+  <input id="name" placeholder="Product Name">
+  <input id="price" placeholder="Price">
+  <input id="weight" placeholder="Weight">
+
+  <button onclick="addProduct()">💾 Save Product</button>
+</div>
+
+<h3>📋 All Products</h3>
+<div id="list"></div>
+
+<script type="module">
+
+// 🔥 STEP A: Firebase Imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔥 YOUR CONFIG (READY TO USE)
+const firebaseConfig = {
+  apiKey: "AIzaSyC7Cx2Y0OKZpxIz3S02byRs-p5sKrLjeqA",
+  authDomain: "product-scanner-f9d84.firebaseapp.com",
+  projectId: "product-scanner-f9d84",
+  storageBucket: "product-scanner-f9d84.firebasestorage.app",
+  messagingSenderId: "33815016634",
+  appId: "1:33815016634:web:2210d382e9b781c2be3e83",
+  measurementId: "G-15QZ4ZJ392"
+};
+
+// 🔥 Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🔥 STEP D: Camera setup
+let imageData = "";
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+  document.getElementById("video").srcObject = stream;
+});
+
+// 🔥 STEP E: Capture image
+window.capture = function() {
+  let video = document.getElementById("video");
+  let canvas = document.createElement("canvas");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  canvas.getContext("2d").drawImage(video, 0, 0);
+
+  imageData = canvas.toDataURL();
+  document.getElementById("preview").src = imageData;
+};
+
+// 🔥 STEP F: Save product
+window.addProduct = async function() {
+
+  let name = document.getElementById("name").value;
+  let price = document.getElementById("price").value;
+  let weight = document.getElementById("weight").value;
+
+  if (!name || !imageData) {
+    alert("Please capture image and enter name");
+    return;
+  }
+
+  await addDoc(collection(db, "products"), {
+    name,
+    price,
+    weight,
+    image: imageData
+  });
+
+  alert("✅ Saved!");
+  loadProducts();
+};
+
+// 🔥 STEP G: Load products
+async function loadProducts() {
+
+  const querySnapshot = await getDocs(collection(db, "products"));
+
+  let html = "";
+
+  querySnapshot.forEach((docSnap) => {
+
+    let p = docSnap.data();
+
+    html += `
+      <div class="product">
+        <img src="${p.image}" width="100%">
+        <b>${p.name}</b><br>
+        💰 ${p.price}<br>
+        ⚖️ ${p.weight}<br>
+        <button onclick="deleteProduct('${docSnap.id}')">❌ Delete</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("list").innerHTML = html;
+}
+
+// 🔥 STEP H: Delete product
+window.deleteProduct = async function(id) {
+  await deleteDoc(doc(db, "products", id));
+  loadProducts();
+};
+
+// 🔥 STEP I: Load on start
+loadProducts();
+
+</script>
+
+</body>
+</html>
