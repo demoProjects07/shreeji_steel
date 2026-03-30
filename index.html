@@ -5,11 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body { font-family: Arial; background: #f5f6fa; padding: 20px; }
+    body {
+      font-family: Arial;
+      background: #f5f6fa;
+      padding: 15px;
+      margin: 0;
+    }
+
     h2 { text-align: center; }
-    .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; }
-    .product { background: white; padding: 10px; margin-top: 10px; border-radius: 10px; }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    video, img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+    }
+
+    .product {
+      background: white;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 
@@ -18,9 +57,9 @@
 <h2>📦 Product Manager</h2>
 
 <div class="card">
-  <video id="video" autoplay></video>
+  <video id="video" autoplay playsinline></video>
   <button onclick="capture()">📸 Capture</button>
-  <img id="preview" width="100%">
+  <img id="preview">
 
   <input id="name" placeholder="Product Name">
   <input id="price" placeholder="Price">
@@ -34,34 +73,36 @@
 
 <script type="module">
 
-// 🔥 STEP A: Firebase Imports
+// 🔥 Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔥 YOUR CONFIG (READY TO USE)
 const firebaseConfig = {
   apiKey: "AIzaSyC7Cx2Y0OKZpxIz3S02byRs-p5sKrLjeqA",
   authDomain: "product-scanner-f9d84.firebaseapp.com",
   projectId: "product-scanner-f9d84",
   storageBucket: "product-scanner-f9d84.firebasestorage.app",
   messagingSenderId: "33815016634",
-  appId: "1:33815016634:web:2210d382e9b781c2be3e83",
-  measurementId: "G-15QZ4ZJ392"
+  appId: "1:33815016634:web:2210d382e9b781c2be3e83"
 };
 
-// 🔥 Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🔥 STEP D: Camera setup
+// 📷 Camera (BACK CAMERA FIXED)
 let imageData = "";
 
-navigator.mediaDevices.getUserMedia({ video: true })
+navigator.mediaDevices.getUserMedia({
+  video: { facingMode: { ideal: "environment" } }
+})
 .then(stream => {
   document.getElementById("video").srcObject = stream;
+})
+.catch(err => {
+  console.log("Camera error:", err);
 });
 
-// 🔥 STEP E: Capture image
+// 📸 Capture
 window.capture = function() {
   let video = document.getElementById("video");
   let canvas = document.createElement("canvas");
@@ -71,11 +112,11 @@ window.capture = function() {
 
   canvas.getContext("2d").drawImage(video, 0, 0);
 
-  imageData = canvas.toDataURL();
+  imageData = canvas.toDataURL("image/jpeg");
   document.getElementById("preview").src = imageData;
 };
 
-// 🔥 STEP F: Save product
+// 💾 Save
 window.addProduct = async function() {
 
   let name = document.getElementById("name").value;
@@ -95,10 +136,18 @@ window.addProduct = async function() {
   });
 
   alert("✅ Saved!");
+
+  // 🔄 Reset form
+  document.getElementById("name").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("weight").value = "";
+  document.getElementById("preview").src = "";
+  imageData = "";
+
   loadProducts();
 };
 
-// 🔥 STEP G: Load products
+// 📋 Load
 async function loadProducts() {
 
   const querySnapshot = await getDocs(collection(db, "products"));
@@ -111,7 +160,7 @@ async function loadProducts() {
 
     html += `
       <div class="product">
-        <img src="${p.image}" width="100%">
+        <img src="${p.image}">
         <b>${p.name}</b><br>
         💰 ${p.price}<br>
         ⚖️ ${p.weight}<br>
@@ -123,13 +172,13 @@ async function loadProducts() {
   document.getElementById("list").innerHTML = html;
 }
 
-// 🔥 STEP H: Delete product
+// ❌ Delete
 window.deleteProduct = async function(id) {
   await deleteDoc(doc(db, "products", id));
   loadProducts();
 };
 
-// 🔥 STEP I: Load on start
+// 🚀 Load on start
 loadProducts();
 
 </script>
